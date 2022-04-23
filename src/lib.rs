@@ -22,12 +22,11 @@ use triomphe::Arc;
 ///
 /// # Implementation
 ///
-/// Each token carries an [`Arc`]
+/// Each token carries an [`Arc<()>`](Arc)
 /// (not the std one, but a variant from [`triomphe`]
 /// that doesn't track weak references).
 /// Equality checks are implemented as
-/// a pointer check on the zero-sized type ([`unit`])
-/// inside the `Arc`.
+/// a pointer comparison using [`Arc::ptr_eq()`].
 #[derive(Clone, Eq)]
 pub struct Unique(Arc<()>);
 
