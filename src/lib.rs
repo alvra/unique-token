@@ -57,7 +57,8 @@ impl std::hash::Hash for Unique {
 
 impl std::fmt::Debug for Unique {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "0x{:X}", usize::from(self))
+        let len = (usize::BITS / 4) as usize;
+        write!(fmt, "0x{:0len$X}", usize::from(self))
     }
 }
 
