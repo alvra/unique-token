@@ -1,0 +1,14 @@
+[package]
+name = "unique-token"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Alexander van Ratingen"]
+homepage = "https://github.com/alvra/unique-token"
+repository = "https://github.com/alvra/unique-token"
+documentation = "https://docs.rs/unique-token"
+description = "Create unique tokens"
+readme = "README.md"
+
+[dependencies]
+triomphe = { version = "0.1.5", default-features = false }
