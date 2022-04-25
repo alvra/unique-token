@@ -20,4 +20,4 @@ assert_eq!(y, y.clone());
 
 ## Documentation
 
-[Documentation](https://docs.rs/crates/unique-token)
+[Documentation](https://docs.rs/unique-token)
