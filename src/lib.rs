@@ -1,8 +1,14 @@
 //! This crate provides a unique token type.
 
-use triomphe::Arc;
+#![forbid(unsafe_code)]
+
+use std::sync::atomic::{AtomicU64, Ordering};
 
 /// This type represents a unique token.
+///
+/// Each call to [`Unique::new()`] returns a unique value.
+/// The only way to create a token that compares equal is to
+/// clone or copy an existing token.
 ///
 /// # Examples
 ///
@@ -22,49 +28,46 @@ use triomphe::Arc;
 ///
 /// # Implementation
 ///
-/// Each token carries an [`Arc<()>`](Arc)
-/// (not the std one, but a variant from [`triomphe`]
-/// that doesn't track weak references).
-/// Equality checks are implemented as
-/// a pointer comparison using [`Arc::ptr_eq()`].
-#[derive(Clone, Eq)]
-pub struct Unique(Arc<()>);
+/// Each token is provided with a unique ID
+/// by incrementing a static [`AtomicU64`](std::sync::atomic::AtomicU64).
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Unique(u64);
 
 impl Unique {
     /// Create a new token.
     ///
     /// All tokens created by this function compare unequal.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if [`u64::MAX`]
+    /// unique tokens have been created.
+    /// In practice, this should never happen;
+    /// creating one token per nanosecond allows for
+    /// a runtime of almost six centuries.
     #[inline]
     pub fn new() -> Self {
-        Self(Arc::new(()))
-    }
-}
+        static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
-impl PartialEq for Unique {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
-    }
-}
-
-impl std::hash::Hash for Unique {
-    #[inline]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        usize::from(self).hash(state)
+        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+        if id == 0 {
+            panic!("id overflow")
+        }
+        Self(id)
     }
 }
 
 impl std::fmt::Debug for Unique {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        let len = (usize::BITS / 4) as usize;
-        write!(fmt, "0x{:0len$X}", usize::from(self))
+        let len = (u64::BITS / 4) as usize;
+        write!(fmt, "0x{:0len$X}", u64::from(self))
     }
 }
 
-impl From<&Unique> for usize {
+impl From<&Unique> for u64 {
     #[inline]
-    fn from(token: &Unique) -> usize {
-        Arc::as_ptr(&token.0) as usize
+    fn from(token: &Unique) -> u64 {
+        token.0
     }
 }
 
@@ -82,11 +85,11 @@ mod tests {
     }
 
     #[test]
-    fn test_into_usize() {
+    fn test_into_u64() {
         let x = Unique::new();
         let y = Unique::new();
-        assert_ne!(usize::from(&x), usize::from(&y));
-        assert_eq!(usize::from(&x), usize::from(&x.clone()));
-        assert_eq!(usize::from(&y), usize::from(&y.clone()));
+        assert_ne!(u64::from(&x), u64::from(&y));
+        assert_eq!(u64::from(&x), u64::from(&x.clone()));
+        assert_eq!(u64::from(&y), u64::from(&y.clone()));
     }
 }
